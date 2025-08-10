@@ -1,0 +1,24 @@
+Project quick context for Cursor LLMs
+
+- Name: ag3tools — tiny, composable agent tools for LLM frameworks
+- Goal: zero-boilerplate tool library with self-registering tools, typed IO, adapters
+- How to use:
+  - Import convenience: from ag3tools import invoke_tool, find_docs_url
+  - CLI: ag3tools list | ag3tools docs <tech> [--validate] [--json]
+  - OpenAI tools: from ag3tools import openai_tool_specs_from_registry, run_openai_tool_call_from_registry
+  - LangChain tools: from ag3tools import langchain_tools_from_registry
+- Auto-loading: ag3tools auto-imports all modules under ag3tools.tools.* recursively
+- Organization:
+  - ag3tools/tools/search/web_search.py
+  - ag3tools/tools/docs/{rank_docs,find_docs,find_docs_validated,find_docs_many}.py
+  - ag3tools/tools/{fetch_page,validate_docs}.py
+  - core: ag3tools/core/{types,registry,settings,cache}.py
+- Caching: simple in-memory cache w/ TTL (env: AG3TOOLS_CACHE_ENABLED, AG3TOOLS_CACHE_TTL)
+- Tests: pytest in tests/ with e2e and caching speed checks
+
+Adding a new tool
+- Create a module under ag3tools/tools/<category>/<name>.py
+- Define Pydantic input model
+- Decorate function with @register_tool(input_model=..., description=...)
+- That’s it — registry and adapters pick it up automatically
+

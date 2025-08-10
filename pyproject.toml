@@ -1,0 +1,28 @@
+[project]
+name = "ag3tools"
+version = "0.1.0"
+description = "Tiny agent tool library: web_search, rank_docs, find_docs"
+authors = [{name = "Afonso"}]
+requires-python = ">=3.9"
+dependencies = [
+  "pydantic>=2.6",
+  "ddgs>=2.14.2; python_version>='3.9'",
+  "duckduckgo-search>=6.2.6; python_version<'3.9'",
+  "tldextract>=5.1.2",
+]
+
+[project.optional-dependencies]
+adapters = [
+  "langchain>=0.2.10",
+  "langchain-openai>=0.1.17",
+  "openai>=1.37.0",
+]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.scripts]
+ag3tools = "ag3tools.core.cli:main"
+
+
