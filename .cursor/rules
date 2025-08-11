@@ -1,24 +1,92 @@
-Project quick context for Cursor LLMs
+# ag3tools - Zero-Maintenance LLM Tool Library
 
-- Name: ag3tools — tiny, composable agent tools for LLM frameworks
-- Goal: zero-boilerplate tool library with self-registering tools, typed IO, adapters
-- How to use:
-  - Import convenience: from ag3tools import invoke_tool, find_docs_url
-  - CLI: ag3tools list | ag3tools docs <tech> [--validate] [--json]
-  - OpenAI tools: from ag3tools import openai_tool_specs_from_registry, run_openai_tool_call_from_registry
-  - LangChain tools: from ag3tools import langchain_tools_from_registry
-- Auto-loading: ag3tools auto-imports all modules under ag3tools.tools.* recursively
-- Organization:
-  - ag3tools/tools/search/web_search.py
-  - ag3tools/tools/docs/{rank_docs,find_docs,find_docs_validated,find_docs_many}.py
-  - ag3tools/tools/{fetch_page,validate_docs}.py
-  - core: ag3tools/core/{types,registry,settings,cache}.py
-- Caching: simple in-memory cache w/ TTL (env: AG3TOOLS_CACHE_ENABLED, AG3TOOLS_CACHE_TTL)
-- Tests: pytest in tests/ with e2e and caching speed checks
+## Architecture
+```
+ag3tools/
+├── core/                    # Framework internals
+│   ├── registry.py         # Auto-discovery and tool registration
+│   ├── types.py            # Core framework types only
+│   ├── settings.py         # Environment-based configuration
+│   ├── cache.py            # Simple in-memory caching with TTL
+│   ├── cost.py             # LLM cost tracking and logging
+│   └── cli.py              # Command-line interface
+├── tools/                  # Self-contained tool modules
+│   ├── search/
+│   │   └── web_search.py   # DuckDuckGo search + types
+│   ├── docs/
+│   │   ├── find_docs.py    # Multi-mode doc finding + types
+│   │   ├── rank_docs.py    # Heuristic ranking
+│   │   └── validate_docs.py # Doc validation
+│   └── net/
+│       └── fetch_page.py   # HTTP page fetching + types
+├── adapters/               # Framework integrations
+│   ├── openai_tools.py     # OpenAI function calling
+│   └── langchain_tools.py  # LangChain tool integration
+└── __init__.py             # Clean public API (45 lines, no maintenance)
+```
 
-Adding a new tool
-- Create a module under ag3tools/tools/<category>/<name>.py
-- Define Pydantic input model
-- Decorate function with @register_tool(input_model=..., description=...)
-- That’s it — registry and adapters pick it up automatically
+- **Auto-discovery**: Tools register automatically, no manual imports needed
+- **Self-contained**: Each tool file contains its own types and logic
 
+## Quick Usage
+```python
+import ag3tools
+result = ag3tools.invoke_tool("web_search", query="python", max_results=5)
+docs_url = ag3tools.find_docs_url("fastapi")
+tools = ag3tools.list_tools()
+```
+
+## Adding Tools (Zero Maintenance)
+```python
+# File: ag3tools/tools/category/my_tool.py
+from pydantic import BaseModel, Field
+from ag3tools.core.registry import register_tool
+
+class MyInput(BaseModel):
+    query: str = Field(..., description="Query string")
+
+@register_tool(
+    description="Brief tool description",
+    input_model=MyInput,
+    tags=["category"],
+)
+def my_tool(input: MyInput):
+    # Tool logic
+    return {"result": "data"}
+```
+
+## Key Rules
+1. **Types**: Define types directly in tool files, NOT separate type files
+2. **Imports**: Use `from pydantic import BaseModel, Field` not from core.types
+3. **Errors**: Return error states, don't crash: `return {"success": False, "error": str(e)}`
+4. **Auto-load**: No manual imports needed - tools auto-register via directory scan
+5. **Cache**: Use `cache_get/cache_set` for expensive ops
+6. **LLM tools**: Tag with `["llm"]` and set `llm_expected_tokens=N`
+
+## Current Tools
+- Search: `web_search`, `web_search_async`
+- Docs: `find_docs`, `rank_docs`, `validate_docs_*`
+- Net: `fetch_page`, `fetch_page_async`
+
+## CLI
+```bash
+ag3tools list                    # Show tools
+ag3tools run tool --kv key=val  # Run tool
+ag3tools docs fastapi           # Quick lookup
+```
+
+## Testing
+```python
+def test_my_tool():
+    result = ag3tools.invoke_tool("my_tool", query="test")
+    assert result["success"]
+```
+
+## Env Config
+```bash
+AG3TOOLS_CACHE_ENABLED=true
+AG3TOOLS_CACHE_TTL=900
+OPENAI_API_KEY=sk-...
+```
+
+That's it. Add tools, they auto-register. No maintenance hell.

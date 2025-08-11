@@ -1,6 +1,7 @@
 from typing import List
 
-from ag3tools.core.types import BaseModel, Field, FindDocsOutput, FindDocsInput
+from pydantic import BaseModel, Field
+from ag3tools.tools.docs.find_docs import FindDocsOutput, FindDocsInput
 from ag3tools.core.registry import register_tool
 from ag3tools.tools.docs.find_docs import find_docs
 
@@ -20,5 +21,3 @@ def find_docs_many(input: FindDocsManyInput) -> List[FindDocsOutput]:
         out = find_docs(FindDocsInput(technology=tech))
         outs.append(out)
     return outs
-
-

@@ -1,4 +1,5 @@
-from ag3tools.core.types import BaseModel, Field, FindDocsOutput, FindDocsInput
+from pydantic import BaseModel, Field
+from ag3tools.tools.docs.find_docs import FindDocsOutput, FindDocsInput
 from ag3tools.core.registry import register_tool
 from ag3tools.tools.docs.find_docs import find_docs
 from ag3tools.tools.net.fetch_page import fetch_page, FetchPageInput

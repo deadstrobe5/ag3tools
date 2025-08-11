@@ -1,7 +1,5 @@
-import os
 import contextlib
 import time
-import json
 from typing import Iterator
 
 import pytest
@@ -12,8 +10,8 @@ from ag3tools.core.cache import cache_clear
 @pytest.fixture(autouse=True)
 def _fresh_env_and_cache(monkeypatch) -> Iterator[None]:
     # Ensure cache is enabled with short TTL for tests
-    monkeypatch.setenv("AGTOOLS_CACHE_ENABLED", "true")
-    monkeypatch.setenv("AGTOOLS_CACHE_TTL", "60")
+    monkeypatch.setenv("AG3TOOLS_CACHE_ENABLED", "true")
+    monkeypatch.setenv("AG3TOOLS_CACHE_TTL", "60")
     cache_clear()
     yield
     cache_clear()

@@ -1,6 +1,6 @@
 import time
 from ag3tools.tools.search.web_search import web_search
-from ag3tools.core.types import WebSearchInput
+from ag3tools.tools.search.web_search import WebSearchInput
 from ag3tools.core.cache import cache_clear
 
 

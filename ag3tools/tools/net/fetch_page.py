@@ -1,7 +1,7 @@
 from typing import Optional
 import httpx
 
-from ag3tools.core.types import BaseModel, Field
+from pydantic import BaseModel, Field
 from ag3tools.core.registry import register_tool
 from ag3tools.core.settings import HTTP_TIMEOUT_SECONDS
 

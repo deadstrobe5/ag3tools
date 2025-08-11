@@ -1,4 +1,3 @@
-import pytest
 from ag3tools import list_tools, invoke_tool
 
 
@@ -11,4 +10,3 @@ def test_registry_lists_tools():
 def test_invoke_tool_simple():
     out = invoke_tool("find_docs", technology="langgraph")
     assert hasattr(out, "url")
-

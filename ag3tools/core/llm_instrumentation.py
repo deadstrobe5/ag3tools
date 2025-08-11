@@ -66,4 +66,3 @@ def ensure_openai_patched():
         except Exception as e:
             # Log other errors but don't fail
             print(f"Warning: Failed to patch OpenAI completions: {e}")
-            pass

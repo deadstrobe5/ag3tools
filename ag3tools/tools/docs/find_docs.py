@@ -1,10 +1,24 @@
-from ag3tools.core.types import FindDocsInput, FindDocsOutput, RankDocsInput, WebSearchInput
-from ag3tools.tools.search.web_search import web_search
-from ag3tools.tools.docs.rank_docs import rank_docs
+from typing import Optional, Literal
+from pydantic import BaseModel
+from ag3tools.tools.search.web_search import web_search, WebSearchInput
+from ag3tools.tools.docs.rank_docs import rank_docs, RankDocsInput
 from ag3tools.tools.docs.rank_docs_llm import rank_docs_llm, RankDocsLLMInput
 from ag3tools.tools.net.fetch_page import fetch_page, FetchPageInput
 from ag3tools.tools.docs.validate_docs_llm import validate_docs_llm, ValidateDocsLLMInput
 from ag3tools.core.registry import register_tool
+
+
+class FindDocsInput(BaseModel):
+    technology: str
+    mode: Literal["fast", "validated", "cracked"] = "fast"
+    top_k: int = 6
+    llm_model: str = "gpt-4o-mini"
+
+
+class FindDocsOutput(BaseModel):
+    url: Optional[str]
+    title: Optional[str] = None
+    reason: Optional[str] = None
 
 
 @register_tool(
@@ -58,5 +72,3 @@ def find_docs(input: FindDocsInput) -> FindDocsOutput:
     # Default fallback
     top = ranked[0]
     return FindDocsOutput(url=top.result.url, title=top.result.title, reason="ranked_top")
-
-

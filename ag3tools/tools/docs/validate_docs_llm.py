@@ -1,6 +1,6 @@
 from typing import Optional
 
-from ag3tools.core.types import BaseModel, Field
+from pydantic import BaseModel, Field
 from ag3tools.core.registry import register_tool
 
 
@@ -57,5 +57,3 @@ def validate_docs_llm(input: ValidateDocsLLMInput) -> ValidateDocsLLMOutput:
     verdict = content[0].strip().upper() if content else "NO"
     reason = content[1].strip() if len(content) > 1 else None
     return ValidateDocsLLMOutput(url=input.url, is_docs=(verdict == "YES"), reason=reason)
-
-

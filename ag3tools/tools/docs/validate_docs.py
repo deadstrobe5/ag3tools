@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-from ag3tools.core.types import BaseModel, Field
+from pydantic import BaseModel, Field
 from ag3tools.core.registry import register_tool
 
 
@@ -40,5 +40,3 @@ def validate_docs_page(input: ValidateDocsInput) -> ValidateDocsOutput:
         if re.search(pattern, text):
             return ValidateDocsOutput(url=input.url, is_docs=True, reason=f"match:{pattern}")
     return ValidateDocsOutput(url=input.url, is_docs=False, reason="no_match")
-
-

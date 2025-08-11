@@ -1,0 +1,4 @@
+Requirement already satisfied: ddgs in ./.venv/lib/python3.10/site-packages (9.5.2)
+Requirement already satisfied: click>=8.1.8 in ./.venv/lib/python3.10/site-packages (from ddgs) (8.2.1)
+Requirement already satisfied: primp>=0.15.0 in ./.venv/lib/python3.10/site-packages (from ddgs) (0.15.0)
+Requirement already satisfied: lxml>=5.3.0 in ./.venv/lib/python3.10/site-packages (from ddgs) (6.0.0)

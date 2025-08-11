@@ -1,38 +1,63 @@
-"""agtools public API.
+"""ag3tools public API.
 
-Auto-loads all tools recursively from ag3tools.tools.* so you never update exports.
+Simple, clean interface that exposes only the core registry functions.
 """
 
-# Auto-import all types and registry functions
-from .core.types import *  # noqa: F401,F403
-from .core.registry import *  # noqa: F401,F403
-
-# Auto-import all tools by recursively scanning tools/ directory
+# Import and auto-load all tools
 import importlib
 import pkgutil
 from pathlib import Path
 
+# Core registry functions - this is the main API
+from .core.registry import (
+    invoke_tool,
+    list_tools,
+    get_tool_spec,
+    invoke_tool_async,
+    register_tool,
+    tool_summaries,
+    ToolSpec,
+)
+
+# Auto-load all tools by scanning tools/ directory
+# This registers them with the registry
 _tools_dir = Path(__file__).parent / "tools"
 _pkg_prefix = f"{__package__}.tools."
 
 for mod in pkgutil.walk_packages([str(_tools_dir)], prefix=_pkg_prefix):
-    fullname = mod.name
     try:
-        importlib.import_module(fullname)
+        importlib.import_module(mod.name)
     except Exception:
-        # Keep import failures non-fatal; tools should be robust to optional deps
+        # Keep import failures non-fatal
         continue
 
-# Import adapter helpers
-from .adapters.openai_tools import (
-    openai_tool_specs_from_registry,
-    run_openai_tool_call_from_registry,
-)
-from .adapters.langchain_tools import langchain_tools_from_registry
-
-# Convenience functions
+# Convenience function
 def find_docs_url(technology: str) -> str | None:
-    """Convenience: return only the URL or None."""
-    return invoke_tool("find_docs", technology=technology).url
+    """Quick way to get just the docs URL."""
+    result = invoke_tool("find_docs", technology=technology)
+    return result.url if hasattr(result, 'url') else None
 
+# Optional adapter functions (lazy loaded)
+def get_openai_tools():
+    """Get OpenAI function specs for all tools."""
+    try:
+        from .adapters.openai_tools import openai_tool_specs_from_registry
+        return openai_tool_specs_from_registry()
+    except ImportError:
+        raise ImportError("OpenAI adapter requires: pip install openai")
 
+def get_langchain_tools():
+    """Get LangChain tools for all tools."""
+    try:
+        from .adapters.langchain_tools import langchain_tools_from_registry
+        return langchain_tools_from_registry()
+    except ImportError:
+        raise ImportError("LangChain adapter requires: pip install langchain")
+
+def run_openai_tool_call(tool_call):
+    """Execute an OpenAI tool call."""
+    try:
+        from .adapters.openai_tools import run_openai_tool_call_from_registry
+        return run_openai_tool_call_from_registry(tool_call)
+    except ImportError:
+        raise ImportError("OpenAI adapter requires: pip install openai")

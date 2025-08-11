@@ -1,6 +1,7 @@
 from typing import List, Optional
 
-from ag3tools.core.types import BaseModel, Field, SearchResult
+from pydantic import BaseModel, Field
+from ag3tools.tools.search.web_search import SearchResult
 from ag3tools.core.registry import register_tool
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type
 import asyncio
 import inspect
 import time
@@ -12,13 +12,14 @@ from ag3tools.core.cost import log_cost, CostEvent, estimate_openai_cost
 from ag3tools.core import settings
 
 
+
 @dataclass
 class ToolSpec:
     name: str
     description: str
     input_model: Type[BaseModel]
     output_model: Optional[Type[BaseModel]]
-    fn: Callable[[BaseModel], Any]
+    fn: Callable[[Any], Any]
     tags: List[str]
     llm_expected_tokens: Optional[int]
 
@@ -35,7 +36,7 @@ def register_tool(
     tags: Optional[List[str]] = None,
     llm_expected_tokens: Optional[int] = None,
 ):
-    def _decorator(fn: Callable[[BaseModel], Any]):
+    def _decorator(fn: Callable[[Any], Any]):
         tool_name = name or fn.__name__
         desc = (description or fn.__doc__ or "").strip()
         _REGISTRY[tool_name] = ToolSpec(

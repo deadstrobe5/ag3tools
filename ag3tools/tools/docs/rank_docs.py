@@ -2,9 +2,20 @@ import re
 from typing import List
 
 import tldextract
+from pydantic import BaseModel
 
-from ag3tools.core.types import RankDocsInput, RankedResult, SearchResult
+from ag3tools.tools.search.web_search import SearchResult
 from ag3tools.core.registry import register_tool
+
+
+class RankedResult(BaseModel):
+    result: SearchResult
+    score: float
+
+
+class RankDocsInput(BaseModel):
+    technology: str
+    candidates: List[SearchResult]
 
 
 DOC_KEYWORDS = {
@@ -112,5 +123,3 @@ def rank_docs(input: RankDocsInput) -> List[RankedResult]:
     ranked = [RankedResult(result=r, score=_score(r, input.technology)) for r in input.candidates]
     ranked.sort(key=lambda x: x.score, reverse=True)
     return ranked
-
-
