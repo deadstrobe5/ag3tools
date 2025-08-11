@@ -1,59 +1,71 @@
-## ag3tools — composable tools for LLM agents
+## ag3tools — Tiny, composable tool library for LLM agents
 
-Small, framework-agnostic tools with typed IO, simple registry, adapters, and a clean CLI.
+A collection of modular, framework-agnostic tools that can be easily integrated with any LLM agent framework.
 
-### Install
+### Quick Start
 ```bash
+# Install
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .[adapters]
-```
+pip install -e .
 
-### Quick use
-- Find docs fast:
-```python
+# Use any tool directly
 from ag3tools.core.registry import invoke_tool
-print(invoke_tool("find_docs", technology="langgraph"))
-```
-- CLI:
-```bash
-ag3tools docs langgraph              # heuristic
-ag3tools docs langgraph --validate   # fetch + validate
-ag3tools list                        # list tools
-ag3tools run find_docs --kv technology=langgraph --json
-```
 
-### Modes (for find_docs)
-- fast: heuristic rank
-- validated: fetch + heuristic validate
-- cracked: LLM re-rank + LLM validate
+# Find documentation
+result = invoke_tool("find_docs", technology="langgraph")
+
+# Or via CLI
+ag3tools list                        # see available tools
+ag3tools run find_docs --kv technology=langgraph
+```
 
 ### Features
-- Typed inputs/outputs (Pydantic)
-- Self-registering tools (no __all__ busy-work)
-- Adapters: OpenAI function-calling, LangChain
-- In-memory cache for search (env-controlled)
-- LLM cost logging (auto; JSONL)
+- Modular tools with typed IO (Pydantic)
+- Self-registering tool registry
+- Framework adapters:
+  - OpenAI function calling
+  - LangChain tools
+- Built for agents:
+  - Clean tool discovery
+  - Automatic cost logging
+  - Smart caching
+  - Async variants
 
-### Config (env)
-- AG3TOOLS_CACHE_ENABLED (default: true)
-- AG3TOOLS_CACHE_TTL (seconds, default: 900)
-- AG3TOOLS_HTTP_TIMEOUT (seconds, default: 8.0)
-- AG3TOOLS_COST_LOG_ENABLED (default: true)
-- AG3TOOLS_COST_LOG_PATH (default: ~/.ag3tools/cost_logs.jsonl)
+### Available Tools
+- Documentation tools:
+  - `find_docs`: Find official docs (fast/validated/cracked modes)
+  - `validate_docs`: Check if page is real documentation
+  - `rank_docs`: Score and rank documentation candidates
+- Search tools:
+  - `web_search`: Clean web search results
+  - `web_search_async`: Non-blocking variant
+- Network tools:
+  - `fetch_page`: Get page content with validation
+  - `fetch_page_async`: Non-blocking variant
+
+### Config
+Control via environment:
+```bash
+# LLM features
+export OPENAI_API_KEY=...            # for LLM-powered tools
+export AG3TOOLS_LLM_MODEL=gpt-4o-mini  # optional override
+
+# Caching
+export AG3TOOLS_CACHE_ENABLED=true   # default
+export AG3TOOLS_CACHE_TTL=900       # seconds
+
+# Cost logging
+export AG3TOOLS_COST_LOG_ENABLED=true  # default
+export AG3TOOLS_COST_LOG_PATH=~/.ag3tools/cost_logs.jsonl
+```
+
+### Examples
+See `cookbook/` for real usage examples of different tools and modes.
 
 ### Tests
 ```bash
-pytest -q               # all
+pytest -q               # all tests
 pytest tests/core -q    # core & fast
-pytest tests/tools -q   # tools
+pytest tests/tools -q   # tools only
 ```
-
-### Cookbook
-Examples in `cookbook/`.
-
-### Roadmap (short)
-- CLI: flags for modes (`--mode`, `--top-k`, `--model`)
-- CLI: `ag3tools costs summarize` (by tool/model/time)
-- List output: show `llm_expected_tokens` and estimated $ using current pricing

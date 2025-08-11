@@ -1,7 +1,7 @@
 [project]
 name = "ag3tools"
 version = "0.1.0"
-description = "Tiny agent tool library: web_search, rank_docs, find_docs"
+description = "Tiny, composable tool library for LLM agents"
 authors = [{name = "Afonso"}]
 requires-python = ">=3.9"
 dependencies = [
@@ -18,11 +18,12 @@ adapters = [
   "openai>=1.37.0",
 ]
 
+[tool.setuptools]
+packages = ["ag3tools"]
+
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
 ag3tools = "ag3tools.core.cli:main"
-
-
