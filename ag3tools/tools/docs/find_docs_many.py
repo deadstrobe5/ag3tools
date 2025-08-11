@@ -1,6 +1,6 @@
 from typing import List
 
-from ag3tools.core.types import BaseModel, Field, FindDocsOutput
+from ag3tools.core.types import BaseModel, Field, FindDocsOutput, FindDocsInput
 from ag3tools.core.registry import register_tool
 from ag3tools.tools.docs.find_docs import find_docs
 
@@ -17,7 +17,7 @@ class FindDocsManyInput(BaseModel):
 def find_docs_many(input: FindDocsManyInput) -> List[FindDocsOutput]:
     outs: List[FindDocsOutput] = []
     for tech in input.technologies:
-        out = find_docs(type("_", (), {"technology": tech})())
+        out = find_docs(FindDocsInput(technology=tech))
         outs.append(out)
     return outs
 

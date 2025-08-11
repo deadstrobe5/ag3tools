@@ -1,4 +1,4 @@
-from ag3tools.core.types import BaseModel, Field, FindDocsOutput
+from ag3tools.core.types import BaseModel, Field, FindDocsOutput, FindDocsInput
 from ag3tools.core.registry import register_tool
 from ag3tools.tools.docs.find_docs import find_docs
 from ag3tools.tools.net.fetch_page import fetch_page, FetchPageInput
@@ -15,7 +15,7 @@ class FindDocsValidatedInput(BaseModel):
     tags=["docs", "validation"],
 )
 def find_docs_validated(input: FindDocsValidatedInput) -> FindDocsOutput:
-    base = find_docs(type("_", (), {"technology": input.technology})())
+    base = find_docs(FindDocsInput(technology=input.technology))
     page = fetch_page(FetchPageInput(url=base.url)) if base.url else None
     if page and page.content:
         v = validate_docs_page(ValidateDocsInput(url=page.url, content=page.content))

@@ -28,3 +28,7 @@ CACHE_ENABLED = _get_env_bool("AGTOOLS_CACHE_ENABLED", True)
 CACHE_TTL_SECONDS = _get_env_int("AGTOOLS_CACHE_TTL", 900)  # 15 minutes
 
 HTTP_TIMEOUT_SECONDS = _get_env_float("AGTOOLS_HTTP_TIMEOUT", 8.0)
+
+# Cost logging
+COST_LOG_ENABLED = _get_env_bool("AG3TOOLS_COST_LOG_ENABLED", True)
+COST_LOG_PATH = os.getenv("AG3TOOLS_COST_LOG_PATH", os.path.expanduser("~/.ag3tools/cost_logs.jsonl"))

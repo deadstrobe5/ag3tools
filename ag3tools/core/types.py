@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
 
 
@@ -25,6 +25,9 @@ class RankDocsInput(BaseModel):
 
 class FindDocsInput(BaseModel):
     technology: str
+    mode: Literal["fast", "validated", "cracked"] = "fast"
+    top_k: int = 6
+    llm_model: str = "gpt-4o-mini"
 
 
 class FindDocsOutput(BaseModel):
