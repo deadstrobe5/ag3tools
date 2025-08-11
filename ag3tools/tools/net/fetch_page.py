@@ -4,17 +4,18 @@ import httpx
 from pydantic import BaseModel, Field
 from ag3tools.core.registry import register_tool
 from ag3tools.core.settings import HTTP_TIMEOUT_SECONDS
+from ag3tools.core.types import ToolResult
 
 
 class FetchPageInput(BaseModel):
     url: str = Field(..., description="URL to fetch")
 
 
-class FetchPageOutput(BaseModel):
+class FetchPageOutput(ToolResult):
     url: str
-    status: int
-    content: Optional[str]
-    content_type: Optional[str]
+    status: int = 0
+    content: Optional[str] = None
+    content_type: Optional[str] = None
 
 
 @register_tool(
@@ -32,8 +33,13 @@ def fetch_page(input: FetchPageInput) -> FetchPageOutput:
             if content_type and "text" in content_type:
                 text = resp.text
             return FetchPageOutput(url=str(resp.url), status=resp.status_code, content=text, content_type=content_type)
-    except Exception:
-        return FetchPageOutput(url=input.url, status=0, content=None, content_type=None)
+    except Exception as e:
+        return FetchPageOutput(
+            success=False,
+            error_message=f"Failed to fetch {input.url}: {str(e)}",
+            error_code="FETCH_ERROR",
+            url=input.url
+        )
 
 
 @register_tool(
@@ -51,5 +57,10 @@ async def fetch_page_async(input: FetchPageInput) -> FetchPageOutput:
             if content_type and "text" in content_type:
                 text = resp.text
             return FetchPageOutput(url=str(resp.url), status=resp.status_code, content=text, content_type=content_type)
-    except Exception:
-        return FetchPageOutput(url=input.url, status=0, content=None, content_type=None)
+    except Exception as e:
+        return FetchPageOutput(
+            success=False,
+            error_message=f"Failed to fetch {input.url}: {str(e)}",
+            error_code="FETCH_ERROR",
+            url=input.url
+        )

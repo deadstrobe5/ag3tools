@@ -6,6 +6,7 @@ from ag3tools.tools.docs.rank_docs_llm import rank_docs_llm, RankDocsLLMInput
 from ag3tools.tools.net.fetch_page import fetch_page, FetchPageInput
 from ag3tools.tools.docs.validate_docs_llm import validate_docs_llm, ValidateDocsLLMInput
 from ag3tools.core.registry import register_tool
+from ag3tools.core.types import ToolResult
 
 
 class FindDocsInput(BaseModel):
@@ -15,8 +16,8 @@ class FindDocsInput(BaseModel):
     llm_model: str = "gpt-4o-mini"
 
 
-class FindDocsOutput(BaseModel):
-    url: Optional[str]
+class FindDocsOutput(ToolResult):
+    url: Optional[str] = None
     title: Optional[str] = None
     reason: Optional[str] = None
 
@@ -38,10 +39,17 @@ def find_docs(input: FindDocsInput) -> FindDocsOutput:
     ]
     results = []
     for q in queries:
-        results.extend(web_search(WebSearchInput(query=q, max_results=input.top_k)))
+        search_result = web_search(WebSearchInput(query=q, max_results=input.top_k))
+        if search_result.success:
+            results.extend(search_result.results)
     ranked = rank_docs(RankDocsInput(technology=input.technology, candidates=results))
     if not ranked:
-        return FindDocsOutput(url=None, reason="no_results")
+        return FindDocsOutput(
+            success=False,
+            error_message="No documentation found",
+            error_code="NO_RESULTS",
+            reason="no_results"
+        )
 
     if input.mode == "fast":
         top = ranked[0]

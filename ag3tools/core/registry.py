@@ -60,7 +60,7 @@ def get_tool_spec(name: str) -> ToolSpec:
     return _REGISTRY[name]
 
 
-def _log_llm_costs(start_time: float, tool_name: str, tool_params: dict = None, execution_time_ms: float = None) -> None:
+def _log_llm_costs(start_time: float, tool_name: str, tool_params: Optional[dict] = None, execution_time_ms: Optional[float] = None) -> None:
     """Helper to log LLM costs from captured token usage."""
     if not settings.COST_LOG_ENABLED:
         return

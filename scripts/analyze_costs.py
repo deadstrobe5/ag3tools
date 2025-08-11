@@ -19,7 +19,7 @@ import csv
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from typing import Dict, List, Any
-from collections import defaultdict
+
 
 
 def load_cost_data(days: int = 30) -> List[Dict]:
@@ -82,21 +82,24 @@ def analyze_summary(events: List[Dict]) -> Dict[str, Any]:
 
 def analyze_by_tool(events: List[Dict]) -> Dict[str, Dict[str, Any]]:
     """Analyze costs grouped by tool."""
-    tool_stats = defaultdict(lambda: {
-        'calls': 0,
-        'total_cost': 0.0,
-        'total_input_tokens': 0,
-        'total_output_tokens': 0,
-        'models': set(),
-        'execution_times': [],
-        'first_used': None,
-        'last_used': None
-    })
+    tool_stats: Dict[str, Dict[str, Any]] = {}
 
     for event in events:
         tool = event.get('tool')
         if not tool:
             continue
+
+        if tool not in tool_stats:
+            tool_stats[tool] = {
+                'calls': 0,
+                'total_cost': 0.0,
+                'total_input_tokens': 0,
+                'total_output_tokens': 0,
+                'models': set(),
+                'execution_times': [],
+                'first_used': None,
+                'last_used': None
+            }
 
         stats = tool_stats[tool]
         stats['calls'] += 1
@@ -142,18 +145,21 @@ def analyze_by_tool(events: List[Dict]) -> Dict[str, Dict[str, Any]]:
 
 def analyze_trends(events: List[Dict], days: int = 7) -> Dict[str, Any]:
     """Analyze usage trends over time."""
-    daily_stats = defaultdict(lambda: {
-        'calls': 0,
-        'cost': 0.0,
-        'tokens': 0,
-        'tools': set()
-    })
+    daily_stats: Dict[str, Dict[str, Any]] = {}
 
     for event in events:
         if not event.get('date'):
             continue
 
         date_key = event['date']
+        if date_key not in daily_stats:
+            daily_stats[date_key] = {
+                'calls': 0,
+                'cost': 0.0,
+                'tokens': 0,
+                'tools': set()
+            }
+
         daily_stats[date_key]['calls'] += 1
         daily_stats[date_key]['cost'] += event.get('total_cost', 0) or 0
         daily_stats[date_key]['tokens'] += (

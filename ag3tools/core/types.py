@@ -14,9 +14,10 @@ class ToolResult(BaseModel):
     """Base result type with common fields."""
     success: bool = True
     error_message: Optional[str] = None
+    error_code: Optional[str] = None
     metadata: dict = {}
 
     @classmethod
-    def error(cls, message: str, **kwargs) -> "ToolResult":
+    def error(cls, message: str, code: str = "ERROR", **kwargs) -> "ToolResult":
         """Create an error result."""
-        return cls(success=False, error_message=message, **kwargs)
+        return cls(success=False, error_message=message, error_code=code, **kwargs)

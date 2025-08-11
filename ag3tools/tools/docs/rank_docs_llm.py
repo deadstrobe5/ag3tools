@@ -3,6 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from ag3tools.tools.search.web_search import SearchResult
 from ag3tools.core.registry import register_tool
+from ag3tools.core.types import ToolResult
 
 
 class RankDocsLLMInput(BaseModel):
@@ -11,8 +12,8 @@ class RankDocsLLMInput(BaseModel):
     model: str = Field(default="gpt-4o-mini", description="LLM model to use")
 
 
-class RankDocsLLMOutput(BaseModel):
-    url: Optional[str]
+class RankDocsLLMOutput(ToolResult):
+    url: Optional[str] = None
     reason: Optional[str] = None
 
 

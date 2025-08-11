@@ -2,6 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 from ag3tools.core.registry import register_tool
+from ag3tools.core.types import ToolResult
 
 
 class ValidateDocsLLMInput(BaseModel):
@@ -10,9 +11,9 @@ class ValidateDocsLLMInput(BaseModel):
     model: str = Field(default="gpt-4o-mini", description="LLM model to use")
 
 
-class ValidateDocsLLMOutput(BaseModel):
-    url: str
-    is_docs: bool
+class ValidateDocsLLMOutput(ToolResult):
+    url: str = ""
+    is_docs: bool = False
     reason: Optional[str] = None
 
 

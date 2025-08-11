@@ -63,7 +63,7 @@ def log_cost(event: CostEvent) -> None:
         f.write(event_json + "\n")
 
     # Log to new organized structure (data/cost_logs/llm_costs_YYYY-MM-DD.jsonl)
-    date_str = enhanced_event.date
+    date_str = enhanced_event.date or datetime.fromtimestamp(enhanced_event.ts).strftime("%Y-%m-%d")
     new_log_path = _get_cost_log_path(date_str)
     with open(new_log_path, "a", encoding="utf-8") as f:
         f.write(event_json + "\n")

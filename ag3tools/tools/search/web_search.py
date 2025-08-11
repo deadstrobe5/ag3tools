@@ -10,6 +10,7 @@ except ImportError:  # pragma: no cover
 
 from pydantic import BaseModel, Field
 from ag3tools.core.registry import register_tool
+from ag3tools.core.types import ToolResult
 import asyncio
 from ag3tools.core.cache import cache_get, cache_set
 
@@ -25,15 +26,20 @@ class SearchResult(BaseModel):
     snippet: str = Field(default="")
 
 
+class WebSearchOutput(ToolResult):
+    results: List[SearchResult] = []
+
+
 @register_tool(
     description="Web search using DuckDuckGo (ddgs). Returns a list of normalized search results.",
     input_model=WebSearchInput,
+    output_model=WebSearchOutput,
     tags=["search"],
 )
-def web_search(input: WebSearchInput) -> List[SearchResult]:
+def web_search(input: WebSearchInput) -> WebSearchOutput:
     cached = cache_get("web_search", input.query, input.max_results)
     if cached is not None:
-        return cached
+        return WebSearchOutput(results=cached)
 
     try:
         with DDGS() as ddg:
@@ -43,9 +49,12 @@ def web_search(input: WebSearchInput) -> List[SearchResult]:
                 safesearch="moderate",
                 region="wt-wt",
             ) or []
-    except Exception:
-        # If search fails, return empty results instead of crashing
-        results = []
+    except Exception as e:
+        return WebSearchOutput(
+            success=False,
+            error_message=f"Search failed: {str(e)}",
+            error_code="SEARCH_ERROR"
+        )
 
     cleaned = [
         SearchResult(
@@ -56,13 +65,14 @@ def web_search(input: WebSearchInput) -> List[SearchResult]:
         for r in results
     ]
     cache_set("web_search", cleaned, input.query, input.max_results)
-    return cleaned
+    return WebSearchOutput(results=cleaned)
 
 
 @register_tool(
     description="Async variant of web_search (runs provider in a worker thread).",
     input_model=WebSearchInput,
+    output_model=WebSearchOutput,
     tags=["search", "async"],
 )
-async def web_search_async(input: WebSearchInput) -> List[SearchResult]:
+async def web_search_async(input: WebSearchInput) -> WebSearchOutput:
     return await asyncio.to_thread(web_search, input)

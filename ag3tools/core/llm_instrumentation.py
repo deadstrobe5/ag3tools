@@ -1,30 +1,31 @@
 import threading
+import contextvars
 from typing import Dict, Tuple
 
 _patched = False
 _lock = threading.Lock()
 
-# Thread-local aggregation of tokens by model
-_local = threading.local()
+# Context-aware aggregation of tokens by model (works with async)
+_token_context: contextvars.ContextVar = contextvars.ContextVar('tokens', default={})
+_prev_context: contextvars.ContextVar = contextvars.ContextVar('prev_tokens', default=None)
 
 
 def _get_agg() -> Dict[str, Tuple[int, int]]:
-    agg = getattr(_local, "agg", None)
-    if agg is None:
-        agg = {}
-        _local.agg = agg
-    return agg
+    return _token_context.get({})
 
 
 def start_capture():
-    _local.prev = getattr(_local, "agg", None)
-    _local.agg = {}
+    current = _token_context.get({})
+    _prev_context.set(current if current else None)
+    _token_context.set({})
 
 
 def stop_capture() -> Dict[str, Tuple[int, int]]:
-    agg = _get_agg()
+    agg = _token_context.get({})
     # restore previous
-    setattr(_local, "agg", getattr(_local, "prev", None))
+    prev = _prev_context.get(None)
+    _token_context.set(prev or {})
+    _prev_context.set(None)  # Clear previous context
     return agg
 
 
@@ -37,10 +38,10 @@ def ensure_openai_patched():
             return
         try:
             from openai.resources.chat.completions import Completions  # type: ignore
-            
+
             # Get the original create method from the class
             _orig_create = Completions.create
-            
+
             def _wrapped_create(self, *args, **kwargs):  # type: ignore
                 resp = _orig_create(self, *args, **kwargs)
                 try:
@@ -55,11 +56,11 @@ def ensure_openai_patched():
                 except Exception:
                     pass
                 return resp
-            
+
             # Replace the class method with our wrapped version
             Completions.create = _wrapped_create  # type: ignore
             _patched = True
-            
+
         except ImportError:
             # Only set patched if we actually imported and patched OpenAI
             pass

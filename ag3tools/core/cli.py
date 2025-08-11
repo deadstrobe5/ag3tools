@@ -19,6 +19,35 @@ def _print_json_result(result: Any) -> None:
         print(result)
 
 
+def _print_tool_result(result: Any) -> None:
+    """Helper to print tool results in a user-friendly format."""
+    if hasattr(result, 'success') and not result.success:
+        print(f"Error [{result.error_code}]: {result.error_message}")
+        return
+
+    # Handle specific result types nicely
+    if hasattr(result, 'results'):  # WebSearchOutput
+        if result.results:
+            print(f"Found {len(result.results)} results:")
+            for i, r in enumerate(result.results[:3], 1):  # Show first 3
+                print(f"  {i}. {r.title}")
+                print(f"     {r.url}")
+            if len(result.results) > 3:
+                print(f"     ... and {len(result.results) - 3} more")
+        else:
+            print("No results found")
+    elif hasattr(result, 'url') and hasattr(result, 'status'):  # FetchPageOutput
+        print(f"Status: {result.status}")
+        print(f"URL: {result.url}")
+        if result.content_type:
+            print(f"Content-Type: {result.content_type}")
+    elif hasattr(result, 'url') and result.url:  # FindDocsOutput
+        print(result.url)
+    else:
+        # Fallback to regular print
+        print(result)
+
+
 def _handle_list_command(args: argparse.Namespace) -> None:
     """Handle the 'list' command."""
     specs = list_tools()
@@ -52,26 +81,41 @@ def _handle_run_command(args: argparse.Namespace) -> None:
             k, v = pair.split("=", 1)
             kwargs[k] = v
 
-    result = invoke_tool(args.tool, **kwargs)
+    try:
+        result = invoke_tool(args.tool, **kwargs)
 
-    if args.json:
-        _print_json_result(result)
-    else:
-        print(result)
+        if args.json:
+            _print_json_result(result)
+        else:
+            _print_tool_result(result)
+    except KeyError:
+        print(f"Error: Tool '{args.tool}' not found")
+        sys.exit(1)
+    except Exception as e:
+        if "validation error" in str(e).lower():
+            print(f"Error: Invalid parameters for tool '{args.tool}': {e}")
+        else:
+            print(f"Error: {e}")
+        sys.exit(1)
 
 
 def _handle_docs_command(args: argparse.Namespace) -> None:
     """Handle the 'docs' command."""
     tool = "find_docs_validated" if args.validate else "find_docs"
-    result = invoke_tool(tool, technology=args.technology)
 
-    if args.json:
-        _print_json_result(result)
-    else:
-        if hasattr(result, 'url') and result.url:
-            print(result.url)
+    try:
+        result = invoke_tool(tool, technology=args.technology)
+
+        if args.json:
+            _print_json_result(result)
         else:
-            print("No documentation found")
+            _print_tool_result(result)
+    except KeyError:
+        print(f"Error: Tool '{tool}' not found")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 
 def _handle_costs_command(args: argparse.Namespace) -> None:
