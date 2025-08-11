@@ -63,28 +63,32 @@ def _load_pricing_data() -> Dict[str, Tuple[float, float, str]]:
                 if not model_name:
                     continue
 
-                # Try to get per-token pricing (input_price/output_price)
+                # Get per-100 token pricing (input_price/output_price are per-100 tokens in the data)
                 input_cost_str = model_data.get('input_price', '0')
                 output_cost_str = model_data.get('output_price', '0')
 
                 try:
                     input_cost = _parse_cost_value(input_cost_str)
                     output_cost = _parse_cost_value(output_cost_str)
+                    # Store as per-100 token pricing (will divide by 100 when calculating)
                     pricing[model_name] = (input_cost, output_cost, "USD")
                 except (ValueError, TypeError):
                     continue
 
         return pricing
     except (json.JSONDecodeError, FileNotFoundError, KeyError):
-        # Fallback to hardcoded prices if parsing fails
+        # Fallback to hardcoded prices (per-100 tokens) if parsing fails
         return {
-            "gpt-4o-mini": (0.00000015, 0.00000060, "USD"),
-            "gpt-4o": (0.000005, 0.000015, "USD"),
+            "gpt-4o-mini": (0.000015, 0.00006, "USD"),
+            "gpt-4o": (0.0005, 0.0015, "USD"),
         }
 
 
 def estimate_openai_cost(model: str, input_tokens: int, output_tokens: int) -> tuple[float, float, float, str]:
-    """Estimate cost for OpenAI models using real pricing data."""
+    """Estimate cost for OpenAI models using real pricing data.
+
+    Note: Pricing data is stored as per-100 tokens, so we divide by 100 when calculating.
+    """
     pricing = _load_pricing_data()
 
     # Try exact match first
@@ -101,9 +105,10 @@ def estimate_openai_cost(model: str, input_tokens: int, output_tokens: int) -> t
         if fallback_model and fallback_model in pricing:
             pin, pout, cur = pricing[fallback_model]
         else:
-            # Ultimate fallback to gpt-4o-mini pricing
-            pin, pout, cur = pricing.get("gpt-4o-mini", (0.00000015, 0.00000060, "USD"))
+            # Ultimate fallback to gpt-4o-mini pricing (per-100 tokens)
+            pin, pout, cur = pricing.get("gpt-4o-mini", (0.000015, 0.00006, "USD"))
 
-    ic = input_tokens * pin
-    oc = output_tokens * pout
+    # Convert from per-100 token pricing to per-token cost
+    ic = input_tokens * (pin / 100)
+    oc = output_tokens * (pout / 100)
     return ic, oc, ic + oc, cur

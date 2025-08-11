@@ -19,6 +19,21 @@ from .core.registry import (
     ToolSpec,
 )
 
+# Explicitly define public API
+__all__ = [
+    "invoke_tool",
+    "list_tools",
+    "get_tool_spec",
+    "invoke_tool_async",
+    "register_tool",
+    "tool_summaries",
+    "ToolSpec",
+    "find_docs_url",
+    "get_openai_tools",
+    "get_langchain_tools",
+    "run_openai_tool_call",
+]
+
 # Auto-load all tools by scanning tools/ directory
 # This registers them with the registry
 _tools_dir = Path(__file__).parent / "tools"

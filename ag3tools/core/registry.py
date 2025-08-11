@@ -60,21 +60,68 @@ def get_tool_spec(name: str) -> ToolSpec:
     return _REGISTRY[name]
 
 
+def _log_llm_costs(start_time: float, tool_name: str) -> None:
+    """Helper to log LLM costs from captured token usage."""
+    if not settings.COST_LOG_ENABLED:
+        return
+
+    agg = stop_capture()
+    for model, (in_t, out_t) in agg.items():
+        ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
+        log_cost(CostEvent(
+            ts=start_time,
+            tool=tool_name,
+            model=model,
+            input_tokens=in_t,
+            output_tokens=out_t,
+            currency=cur,
+            input_cost=ic,
+            output_cost=oc,
+            total_cost=total,
+            meta={}
+        ))
+
+
+def _execute_with_llm_tracking(fn, model_instance, spec):
+    """Execute function with LLM cost tracking if needed."""
+    if "llm" not in spec.tags:
+        return fn(model_instance)
+
+    ensure_openai_patched()
+    start_capture()
+    t0 = time.time()
+
+    try:
+        result = fn(model_instance)
+        _log_llm_costs(t0, spec.name)
+        return result
+    except Exception:
+        _log_llm_costs(t0, spec.name)
+        raise
+
+
+async def _execute_async_with_llm_tracking(fn, model_instance, spec):
+    """Execute async function with LLM cost tracking if needed."""
+    if "llm" not in spec.tags:
+        return await fn(model_instance)
+
+    ensure_openai_patched()
+    start_capture()
+    t0 = time.time()
+
+    try:
+        result = await fn(model_instance)
+        _log_llm_costs(t0, spec.name)
+        return result
+    except Exception:
+        _log_llm_costs(t0, spec.name)
+        raise
+
+
 def invoke_tool(name: str, **kwargs):
     spec = get_tool_spec(name)
     model_instance = spec.input_model(**kwargs)
-    if "llm" in spec.tags:
-        ensure_openai_patched()
-        start_capture()
-        t0 = time.time()
-        result = spec.fn(model_instance)
-        agg = stop_capture()
-        if settings.COST_LOG_ENABLED:
-            for model, (in_t, out_t) in agg.items():
-                ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
-                log_cost(CostEvent(ts=t0, tool=spec.name, model=model, input_tokens=in_t, output_tokens=out_t, currency=cur, input_cost=ic, output_cost=oc, total_cost=total, meta={}))
-        return result
-    return spec.fn(model_instance)
+    return _execute_with_llm_tracking(spec.fn, model_instance, spec)
 
 
 def tool_summaries() -> List[dict]:
@@ -93,29 +140,22 @@ def tool_summaries() -> List[dict]:
 async def invoke_tool_async(name: str, **kwargs):
     spec = get_tool_spec(name)
     model_instance = spec.input_model(**kwargs)
+
     if inspect.iscoroutinefunction(spec.fn):
+        return await _execute_async_with_llm_tracking(spec.fn, model_instance, spec)
+    else:
+        # run sync function in thread to avoid blocking
         if "llm" in spec.tags:
             ensure_openai_patched()
             start_capture()
             t0 = time.time()
-            result = await spec.fn(model_instance)
-            agg = stop_capture()
-            if settings.COST_LOG_ENABLED:
-                for model, (in_t, out_t) in agg.items():
-                    ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
-                    log_cost(CostEvent(ts=t0, tool=spec.name, model=model, input_tokens=in_t, output_tokens=out_t, currency=cur, input_cost=ic, output_cost=oc, total_cost=total, meta={}))
-            return result
-        return await spec.fn(model_instance)
-    # run sync function in thread to avoid blocking
-    if "llm" in spec.tags:
-        ensure_openai_patched()
-        start_capture()
-        t0 = time.time()
-        result = await asyncio.to_thread(spec.fn, model_instance)
-        agg = stop_capture()
-        if settings.COST_LOG_ENABLED:
-            for model, (in_t, out_t) in agg.items():
-                ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
-                log_cost(CostEvent(ts=t0, tool=spec.name, model=model, input_tokens=in_t, output_tokens=out_t, currency=cur, input_cost=ic, output_cost=oc, total_cost=total, meta={}))
-        return result
-    return await asyncio.to_thread(spec.fn, model_instance)
+
+            try:
+                result = await asyncio.to_thread(spec.fn, model_instance)
+                _log_llm_costs(t0, spec.name)
+                return result
+            except Exception:
+                _log_llm_costs(t0, spec.name)
+                raise
+        else:
+            return await asyncio.to_thread(spec.fn, model_instance)
