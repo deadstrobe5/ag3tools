@@ -16,6 +16,7 @@ class ToolSpec:
     output_model: Optional[Type[BaseModel]]
     fn: Callable[[BaseModel], Any]
     tags: List[str]
+    llm_expected_tokens: Optional[int]
 
 
 _REGISTRY: Dict[str, ToolSpec] = {}
@@ -28,6 +29,7 @@ def register_tool(
     input_model: Type[BaseModel],
     output_model: Optional[Type[BaseModel]] = None,
     tags: Optional[List[str]] = None,
+    llm_expected_tokens: Optional[int] = None,
 ):
     def _decorator(fn: Callable[[BaseModel], Any]):
         tool_name = name or fn.__name__
@@ -39,6 +41,7 @@ def register_tool(
             output_model=output_model,
             fn=fn,
             tags=list(tags or []),
+            llm_expected_tokens=llm_expected_tokens,
         )
         return fn
     return _decorator
@@ -65,6 +68,7 @@ def tool_summaries() -> List[dict]:
             "description": spec.description,
             "parameters": spec.input_model.schema(),
             "tags": list(spec.tags),
+            "llm_expected_tokens": spec.llm_expected_tokens,
         }
         for spec in list_tools()
     ]

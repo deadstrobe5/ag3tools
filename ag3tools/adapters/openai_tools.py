@@ -7,11 +7,12 @@ def openai_tool_specs_from_registry():
     specs = []
     for spec in list_tools():
         tags_line = f"\nTags: {', '.join(spec.tags)}" if spec.tags else ""
+        tokens_line = f"\nExpected tokens: ~{spec.llm_expected_tokens}" if getattr(spec, "llm_expected_tokens", None) else ""
         specs.append({
             "type": "function",
             "function": {
                 "name": spec.name,
-                "description": f"{spec.description}{tags_line}",
+                "description": f"{spec.description}{tags_line}{tokens_line}",
                 "parameters": spec.input_model.model_json_schema(),
             },
         })
