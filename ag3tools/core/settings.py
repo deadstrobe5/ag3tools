@@ -24,10 +24,10 @@ def _get_env_int(name: str, default: int) -> int:
         return default
 
 
-CACHE_ENABLED = _get_env_bool("AGTOOLS_CACHE_ENABLED", True)
-CACHE_TTL_SECONDS = _get_env_int("AGTOOLS_CACHE_TTL", 900)  # 15 minutes
+CACHE_ENABLED = _get_env_bool("AG3TOOLS_CACHE_ENABLED", True)
+CACHE_TTL_SECONDS = _get_env_int("AG3TOOLS_CACHE_TTL", 900)  # 15 minutes
 
-HTTP_TIMEOUT_SECONDS = _get_env_float("AGTOOLS_HTTP_TIMEOUT", 8.0)
+HTTP_TIMEOUT_SECONDS = _get_env_float("AG3TOOLS_HTTP_TIMEOUT", 8.0)
 
 # Cost logging
 COST_LOG_ENABLED = _get_env_bool("AG3TOOLS_COST_LOG_ENABLED", True)

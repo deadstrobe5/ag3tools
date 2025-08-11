@@ -2,7 +2,6 @@ from typing import List, Optional
 
 from ag3tools.core.types import BaseModel, Field, SearchResult
 from ag3tools.core.registry import register_tool
-from ag3tools.core.cost import log_cost, CostEvent, estimate_openai_cost
 
 
 class RankDocsLLMInput(BaseModel):
@@ -16,14 +15,6 @@ class RankDocsLLMOutput(BaseModel):
     reason: Optional[str] = None
 
 
-def _import_openai():
-    try:
-        from openai import OpenAI  # type: ignore
-        return OpenAI
-    except Exception:  # pragma: no cover
-        return None
-
-
 @register_tool(
     description="Use an LLM to pick the best official docs URL from candidates.",
     input_model=RankDocsLLMInput,
@@ -32,11 +23,12 @@ def _import_openai():
     llm_expected_tokens=350,
 )
 def rank_docs_llm(input: RankDocsLLMInput) -> RankDocsLLMOutput:
-    OpenAI = _import_openai()
-    if OpenAI is None:
+    try:
+        from openai import Client  # type: ignore
+    except ImportError:
         return RankDocsLLMOutput(url=None, reason="no_openai")
 
-    client = OpenAI()
+    client = Client()
     lines = []
     for i, c in enumerate(input.candidates, 1):
         lines.append(f"{i}. title={c.title}\n   url={c.url}\n   snippet={c.snippet}")
@@ -58,23 +50,6 @@ def rank_docs_llm(input: RankDocsLLMInput) -> RankDocsLLMOutput:
         temperature=0.0,
     )
     content = (resp.choices[0].message.content or "").strip()
-    usage = getattr(resp, "usage", None)
-    in_tokens = getattr(usage, "prompt_tokens", None) if usage else None
-    out_tokens = getattr(usage, "completion_tokens", None) if usage else None
-    if in_tokens is not None and out_tokens is not None:
-        ic, oc, total, cur = estimate_openai_cost(input.model, in_tokens, out_tokens)
-        log_cost(CostEvent(
-            ts=time.time(),
-            tool="rank_docs_llm",
-            model=input.model,
-            input_tokens=in_tokens,
-            output_tokens=out_tokens,
-            currency=cur,
-            input_cost=ic,
-            output_cost=oc,
-            total_cost=total,
-            meta={},
-        ))
     # Extract first URL-like token
     url = None
     for token in content.split():
@@ -82,5 +57,3 @@ def rank_docs_llm(input: RankDocsLLMInput) -> RankDocsLLMOutput:
             url = token.strip().rstrip(".,)")
             break
     return RankDocsLLMOutput(url=url, reason="llm_ranked")
-
-

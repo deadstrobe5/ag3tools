@@ -4,8 +4,12 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Type
 import asyncio
 import inspect
+import time
 
 from pydantic import BaseModel
+from ag3tools.core.llm_instrumentation import ensure_openai_patched, start_capture, stop_capture
+from ag3tools.core.cost import log_cost, CostEvent, estimate_openai_cost
+from ag3tools.core import settings
 
 
 @dataclass
@@ -58,6 +62,17 @@ def get_tool_spec(name: str) -> ToolSpec:
 def invoke_tool(name: str, **kwargs):
     spec = get_tool_spec(name)
     model_instance = spec.input_model(**kwargs)
+    if "llm" in spec.tags:
+        ensure_openai_patched()
+        start_capture()
+        t0 = time.time()
+        result = spec.fn(model_instance)
+        agg = stop_capture()
+        if settings.COST_LOG_ENABLED:
+            for model, (in_t, out_t) in agg.items():
+                ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
+                log_cost(CostEvent(ts=t0, tool=spec.name, model=model, input_tokens=in_t, output_tokens=out_t, currency=cur, input_cost=ic, output_cost=oc, total_cost=total, meta={}))
+        return result
     return spec.fn(model_instance)
 
 
@@ -78,8 +93,28 @@ async def invoke_tool_async(name: str, **kwargs):
     spec = get_tool_spec(name)
     model_instance = spec.input_model(**kwargs)
     if inspect.iscoroutinefunction(spec.fn):
+        if "llm" in spec.tags:
+            ensure_openai_patched()
+            start_capture()
+            t0 = time.time()
+            result = await spec.fn(model_instance)
+            agg = stop_capture()
+            if settings.COST_LOG_ENABLED:
+                for model, (in_t, out_t) in agg.items():
+                    ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
+                    log_cost(CostEvent(ts=t0, tool=spec.name, model=model, input_tokens=in_t, output_tokens=out_t, currency=cur, input_cost=ic, output_cost=oc, total_cost=total, meta={}))
+            return result
         return await spec.fn(model_instance)
     # run sync function in thread to avoid blocking
+    if "llm" in spec.tags:
+        ensure_openai_patched()
+        start_capture()
+        t0 = time.time()
+        result = await asyncio.to_thread(spec.fn, model_instance)
+        agg = stop_capture()
+        if settings.COST_LOG_ENABLED:
+            for model, (in_t, out_t) in agg.items():
+                ic, oc, total, cur = estimate_openai_cost(model, in_t, out_t)
+                log_cost(CostEvent(ts=t0, tool=spec.name, model=model, input_tokens=in_t, output_tokens=out_t, currency=cur, input_cost=ic, output_cost=oc, total_cost=total, meta={}))
+        return result
     return await asyncio.to_thread(spec.fn, model_instance)
-
-

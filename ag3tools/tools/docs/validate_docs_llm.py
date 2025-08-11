@@ -2,8 +2,6 @@ from typing import Optional
 
 from ag3tools.core.types import BaseModel, Field
 from ag3tools.core.registry import register_tool
-from ag3tools.core.cost import log_cost, CostEvent, estimate_openai_cost
-import time
 
 
 class ValidateDocsLLMInput(BaseModel):
@@ -56,23 +54,6 @@ def validate_docs_llm(input: ValidateDocsLLMInput) -> ValidateDocsLLMOutput:
         temperature=0.0,
     )
     content = (resp.choices[0].message.content or "").strip().splitlines()
-    usage = getattr(resp, "usage", None)
-    in_tokens = getattr(usage, "prompt_tokens", None) if usage else None
-    out_tokens = getattr(usage, "completion_tokens", None) if usage else None
-    if in_tokens is not None and out_tokens is not None:
-        ic, oc, total, cur = estimate_openai_cost(input.model, in_tokens, out_tokens)
-        log_cost(CostEvent(
-            ts=time.time(),
-            tool="validate_docs_llm",
-            model=input.model,
-            input_tokens=in_tokens,
-            output_tokens=out_tokens,
-            currency=cur,
-            input_cost=ic,
-            output_cost=oc,
-            total_cost=total,
-            meta={},
-        ))
     verdict = content[0].strip().upper() if content else "NO"
     reason = content[1].strip() if len(content) > 1 else None
     return ValidateDocsLLMOutput(url=input.url, is_docs=(verdict == "YES"), reason=reason)

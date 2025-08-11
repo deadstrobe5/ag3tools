@@ -4,7 +4,7 @@ import time
 from dataclasses import dataclass, asdict
 from typing import Optional
 
-from ag3tools.core.settings import COST_LOG_ENABLED, COST_LOG_PATH
+from ag3tools.core import settings
 
 
 @dataclass
@@ -26,10 +26,10 @@ def _ensure_dir(path: str) -> None:
 
 
 def log_cost(event: CostEvent) -> None:
-    if not COST_LOG_ENABLED:
+    if not settings.COST_LOG_ENABLED:
         return
-    _ensure_dir(COST_LOG_PATH)
-    with open(COST_LOG_PATH, "a", encoding="utf-8") as f:
+    _ensure_dir(settings.COST_LOG_PATH)
+    with open(settings.COST_LOG_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(asdict(event), ensure_ascii=False) + "\n")
 
 
@@ -43,5 +43,3 @@ def estimate_openai_cost(model: str, input_tokens: int, output_tokens: int) -> t
     ic = input_tokens * pin
     oc = output_tokens * pout
     return ic, oc, ic + oc, cur
-
-
