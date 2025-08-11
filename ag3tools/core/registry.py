@@ -60,7 +60,7 @@ def get_tool_spec(name: str) -> ToolSpec:
     return _REGISTRY[name]
 
 
-def _log_llm_costs(start_time: float, tool_name: str) -> None:
+def _log_llm_costs(start_time: float, tool_name: str, tool_params: dict = None, execution_time_ms: float = None) -> None:
     """Helper to log LLM costs from captured token usage."""
     if not settings.COST_LOG_ENABLED:
         return
@@ -78,7 +78,9 @@ def _log_llm_costs(start_time: float, tool_name: str) -> None:
             input_cost=ic,
             output_cost=oc,
             total_cost=total,
-            meta={}
+            meta={},
+            tool_params=tool_params,
+            execution_time_ms=execution_time_ms
         ))
 
 
@@ -91,12 +93,17 @@ def _execute_with_llm_tracking(fn, model_instance, spec):
     start_capture()
     t0 = time.time()
 
+    # Capture tool parameters for logging
+    tool_params = model_instance.model_dump() if hasattr(model_instance, 'model_dump') else {}
+
     try:
         result = fn(model_instance)
-        _log_llm_costs(t0, spec.name)
+        execution_time_ms = (time.time() - t0) * 1000
+        _log_llm_costs(t0, spec.name, tool_params, execution_time_ms)
         return result
     except Exception:
-        _log_llm_costs(t0, spec.name)
+        execution_time_ms = (time.time() - t0) * 1000
+        _log_llm_costs(t0, spec.name, tool_params, execution_time_ms)
         raise
 
 
@@ -109,12 +116,17 @@ async def _execute_async_with_llm_tracking(fn, model_instance, spec):
     start_capture()
     t0 = time.time()
 
+    # Capture tool parameters for logging
+    tool_params = model_instance.model_dump() if hasattr(model_instance, 'model_dump') else {}
+
     try:
         result = await fn(model_instance)
-        _log_llm_costs(t0, spec.name)
+        execution_time_ms = (time.time() - t0) * 1000
+        _log_llm_costs(t0, spec.name, tool_params, execution_time_ms)
         return result
     except Exception:
-        _log_llm_costs(t0, spec.name)
+        execution_time_ms = (time.time() - t0) * 1000
+        _log_llm_costs(t0, spec.name, tool_params, execution_time_ms)
         raise
 
 
@@ -150,12 +162,17 @@ async def invoke_tool_async(name: str, **kwargs):
             start_capture()
             t0 = time.time()
 
+            # Capture tool parameters for logging
+            tool_params = model_instance.model_dump() if hasattr(model_instance, 'model_dump') else {}
+
             try:
                 result = await asyncio.to_thread(spec.fn, model_instance)
-                _log_llm_costs(t0, spec.name)
+                execution_time_ms = (time.time() - t0) * 1000
+                _log_llm_costs(t0, spec.name, tool_params, execution_time_ms)
                 return result
             except Exception:
-                _log_llm_costs(t0, spec.name)
+                execution_time_ms = (time.time() - t0) * 1000
+                _log_llm_costs(t0, spec.name, tool_params, execution_time_ms)
                 raise
         else:
             return await asyncio.to_thread(spec.fn, model_instance)

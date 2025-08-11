@@ -4,7 +4,7 @@
 
 [![Tests](https://img.shields.io/badge/tests-17%2F17%20passing-brightgreen)](#) [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
 
-*Tiny, composable tools for LLM agents with auto-discovery and typed I/O*
+*Tiny, composable tools for LLM agents with auto-discovery, typed I/O, and cost tracking*
 
 ## ✨ Features
 
@@ -12,7 +12,7 @@
 - **📝 Type Safe** — Full Pydantic validation
 - **🌐 Framework Agnostic** — Works with OpenAI, LangChain, anything
 - **⚡ Smart Caching** — Built-in caching with TTL
-- **💰 Cost Tracking** — Automatic LLM cost logging
+- **💰 Cost Tracking** — Automatic LLM cost logging with analytics
 
 ## 🚀 Quick Start
 
@@ -78,11 +78,37 @@ def my_tool(input: MyInput):
 # That's it! Auto-discovered, no imports needed.
 ```
 
+## 💰 Cost Tracking & Analytics
+
+All LLM tool calls are automatically logged with detailed cost and token usage data:
+
+```bash
+# View cost overview
+ag3tools costs
+
+# Analyze specific tool
+ag3tools costs --tool validate_docs_llm
+
+# View recent trends  
+ag3tools costs --days 7
+
+# Export to CSV for analysis
+python scripts/analyze_costs.py --export costs.csv
+```
+
+Cost logs are stored in `data/cost_logs/` with daily files containing:
+- Token usage (input/output)
+- Actual costs (per model pricing)
+- Execution times
+- Tool parameters
+- Model information
+
 ## ⚙️ Config
 
 ```bash
 export AG3TOOLS_CACHE_ENABLED=true
 export AG3TOOLS_CACHE_TTL=900
+export AG3TOOLS_COST_LOG_ENABLED=true
 export OPENAI_API_KEY=sk-...
 ```
 

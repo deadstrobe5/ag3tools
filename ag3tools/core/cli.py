@@ -4,6 +4,7 @@ import sys
 from typing import Any
 
 from ag3tools.core.registry import list_tools, invoke_tool
+from ag3tools.core.cost import get_tool_cost_stats, list_recent_tool_usage
 
 
 def _print_json_result(result: Any) -> None:
@@ -73,6 +74,36 @@ def _handle_docs_command(args: argparse.Namespace) -> None:
             print("No documentation found")
 
 
+def _handle_costs_command(args: argparse.Namespace) -> None:
+    """Handle the 'costs' command."""
+    if args.tool:
+        # Show stats for specific tool
+        stats = get_tool_cost_stats(args.tool, args.days)
+        if args.json:
+            _print_json_result(stats)
+        else:
+            print(f"Cost Statistics for '{args.tool}' (last {args.days} days):")
+            print(f"  Total calls: {stats['total_calls']}")
+            print(f"  Total cost: ${stats['total_cost']:.6f}")
+            print(f"  Average cost per call: ${stats['avg_cost_per_call']:.6f}")
+            print(f"  Average input tokens: {stats['avg_input_tokens']:.1f}")
+            print(f"  Average output tokens: {stats['avg_output_tokens']:.1f}")
+            if stats['models_used']:
+                print("  Models used:")
+                for model, model_stats in stats['models_used'].items():
+                    print(f"    {model}: {model_stats['calls']} calls, ${model_stats['cost']:.6f}")
+    else:
+        # Show overview of all tools
+        usage = list_recent_tool_usage(args.days)
+        if args.json:
+            _print_json_result(usage)
+        else:
+            print(f"Tool Usage Overview (last {args.days} days):")
+            sorted_tools = sorted(usage.items(), key=lambda x: x[1]['total_cost'], reverse=True)
+            for tool_name, stats in sorted_tools:
+                print(f"  {tool_name}: {stats['calls']} calls, ${stats['total_cost']:.6f}, avg {stats['avg_tokens']:.0f} tokens")
+
+
 def _setup_parser() -> argparse.ArgumentParser:
     """Set up the argument parser with all subcommands."""
     parser = argparse.ArgumentParser(description="ag3tools CLI")
@@ -95,6 +126,12 @@ def _setup_parser() -> argparse.ArgumentParser:
     docs_parser.add_argument("--validate", action="store_true", help="Validate page content")
     docs_parser.add_argument("--json", action="store_true", help="Print JSON output")
 
+    # Cost analytics
+    costs_parser = subparsers.add_parser("costs", help="Show LLM cost analytics")
+    costs_parser.add_argument("--tool", help="Show stats for specific tool")
+    costs_parser.add_argument("--days", type=int, default=30, help="Number of days to analyze (default: 30)")
+    costs_parser.add_argument("--json", action="store_true", help="Print JSON output")
+
     return parser
 
 
@@ -112,6 +149,7 @@ def main() -> None:
         "list": _handle_list_command,
         "run": _handle_run_command,
         "docs": _handle_docs_command,
+        "costs": _handle_costs_command,
     }
 
     handler = command_handlers.get(args.command)
