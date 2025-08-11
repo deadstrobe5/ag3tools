@@ -1,8 +1,8 @@
 import json
 import os
-import time
 from dataclasses import dataclass, asdict
-from typing import Optional
+from typing import Optional, Dict, Tuple
+from pathlib import Path
 
 from ag3tools.core import settings
 
@@ -33,13 +33,77 @@ def log_cost(event: CostEvent) -> None:
         f.write(json.dumps(asdict(event), ensure_ascii=False) + "\n")
 
 
+def _parse_cost_value(cost_str: str) -> float:
+    """Parse cost string like '$0.00015' to float."""
+    if not cost_str or cost_str == '-':
+        return 0.0
+    return float(cost_str.replace('$', '').replace(',', ''))
+
+
+def _load_pricing_data() -> Dict[str, Tuple[float, float, str]]:
+    """Load pricing data from the extracted LLM costs JSON file."""
+    data_dir = Path(__file__).parent.parent.parent / "data"
+    costs_file = data_dir / "llm_costs.json"
+
+    if not costs_file.exists():
+        # Fallback to hardcoded prices if file doesn't exist
+        return {
+            "gpt-4o-mini": (0.00000015, 0.00000060, "USD"),
+            "gpt-4o": (0.000005, 0.000015, "USD"),
+        }
+
+    try:
+        with open(costs_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        pricing = {}
+        for model_data in data.get('models', []):
+            if model_data.get('Provider') == 'OpenAI':
+                model_name = model_data.get('model')
+                if not model_name:
+                    continue
+
+                # Try to get per-token pricing (input_price/output_price)
+                input_cost_str = model_data.get('input_price', '0')
+                output_cost_str = model_data.get('output_price', '0')
+
+                try:
+                    input_cost = _parse_cost_value(input_cost_str)
+                    output_cost = _parse_cost_value(output_cost_str)
+                    pricing[model_name] = (input_cost, output_cost, "USD")
+                except (ValueError, TypeError):
+                    continue
+
+        return pricing
+    except (json.JSONDecodeError, FileNotFoundError, KeyError):
+        # Fallback to hardcoded prices if parsing fails
+        return {
+            "gpt-4o-mini": (0.00000015, 0.00000060, "USD"),
+            "gpt-4o": (0.000005, 0.000015, "USD"),
+        }
+
+
 def estimate_openai_cost(model: str, input_tokens: int, output_tokens: int) -> tuple[float, float, float, str]:
-    # Prices are placeholders; update as needed from OpenAI pricing
-    pricing = {
-        "gpt-4o-mini": (0.00000015, 0.00000060, "USD"),  # input, output per token
-        "gpt-4o": (0.000005, 0.000015, "USD"),
-    }
-    pin, pout, cur = pricing.get(model, pricing["gpt-4o-mini"])
+    """Estimate cost for OpenAI models using real pricing data."""
+    pricing = _load_pricing_data()
+
+    # Try exact match first
+    if model in pricing:
+        pin, pout, cur = pricing[model]
+    else:
+        # Try fallback patterns for common model variants
+        fallback_model = None
+        if "gpt-4o-mini" in model:
+            fallback_model = "gpt-4o-mini"
+        elif "gpt-4o" in model:
+            fallback_model = "gpt-4o"
+
+        if fallback_model and fallback_model in pricing:
+            pin, pout, cur = pricing[fallback_model]
+        else:
+            # Ultimate fallback to gpt-4o-mini pricing
+            pin, pout, cur = pricing.get("gpt-4o-mini", (0.00000015, 0.00000060, "USD"))
+
     ic = input_tokens * pin
     oc = output_tokens * pout
     return ic, oc, ic + oc, cur
