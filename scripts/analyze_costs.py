@@ -89,18 +89,6 @@ def analyze_by_tool(events: List[Dict]) -> Dict[str, Dict[str, Any]]:
         if not tool:
             continue
 
-        if tool not in tool_stats:
-            tool_stats[tool] = {
-                'calls': 0,
-                'total_cost': 0.0,
-                'total_input_tokens': 0,
-                'total_output_tokens': 0,
-                'models': set(),
-                'execution_times': [],
-                'first_used': None,
-                'last_used': None
-            }
-
         stats = tool_stats[tool]
         stats['calls'] += 1
         stats['total_cost'] += event.get('total_cost', 0) or 0

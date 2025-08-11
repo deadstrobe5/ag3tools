@@ -4,7 +4,8 @@
 ```
 ag3tools/
 ├── core/                    # Framework internals
-│   ├── registry.py         # Auto-discovery and tool registration
+│   ├── registry.py         # Tool registration and discovery (clean, focused)
+│   ├── execution.py        # Tool execution engine with middleware
 │   ├── types.py            # Core framework types only
 │   ├── settings.py         # Environment-based configuration
 │   ├── cache.py            # Simple in-memory caching with TTL
@@ -27,6 +28,8 @@ ag3tools/
 
 - **Auto-discovery**: Tools register automatically, no manual imports needed
 - **Self-contained**: Each tool file contains its own types and logic
+- **Clean separation**: Registry manages tools, execution engine runs them
+- **Extensible**: Middleware system for cross-cutting concerns
 
 ## Quick Usage
 ```python
@@ -62,6 +65,7 @@ def my_tool(input: MyInput):
 4. **Auto-load**: No manual imports needed - tools auto-register via directory scan
 5. **Cache**: Use `cache_get/cache_set` for expensive ops
 6. **LLM tools**: Tag with `["llm"]` and set `llm_expected_tokens=N`
+7. **Execution**: Registry calls execution engine - clean separation of concerns
 
 ## Current Tools
 - Search: `web_search`, `web_search_async`
