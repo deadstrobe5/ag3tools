@@ -9,6 +9,8 @@ dependencies = [
   "ddgs>=6.3.0",
   "tldextract>=5.1.2",
   "httpx>=0.24.0",
+  "mcp[cli]>=1.0.0",
+  "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]

@@ -20,6 +20,8 @@ ag3tools/
 │   │   └── validate_docs.py # Doc validation
 │   └── net/
 │       └── fetch_page.py   # HTTP page fetching + types
+│   └── smithery/
+│       └── importer.py     # Import MCP servers from smithery.ai
 ├── adapters/               # Framework integrations
 │   ├── openai_tools.py     # OpenAI function calling
 │   └── langchain_tools.py  # LangChain tool integration
@@ -37,6 +39,11 @@ import ag3tools
 result = ag3tools.invoke_tool("web_search", query="python", max_results=5)
 docs_url = ag3tools.find_docs_url("fastapi")
 tools = ag3tools.list_tools()
+
+# Smithery MCP servers (set SMITHERY_API_KEY in ~/.bashrc)
+from ag3tools.tools.smithery import import_smithery_server
+import_smithery_server("@nickclyde/duckduckgo-mcp-server")
+result = ag3tools.invoke_tool("ddg:search", query="test")
 ```
 
 ## Adding Tools (Zero Maintenance)
@@ -71,6 +78,7 @@ def my_tool(input: MyInput):
 - Search: `web_search`, `web_search_async`
 - Docs: `find_docs`, `rank_docs`, `validate_docs_*`
 - Net: `fetch_page`, `fetch_page_async`
+- Smithery: Import any MCP server from smithery.ai
 
 ## CLI
 ```bash
@@ -91,6 +99,7 @@ def test_my_tool():
 AG3TOOLS_CACHE_ENABLED=true
 AG3TOOLS_CACHE_TTL=900
 OPENAI_API_KEY=sk-...
+SMITHERY_API_KEY=your-key-here  # Get at smithery.ai
 ```
 
 That's it. Add tools, they auto-register. No maintenance hell.

@@ -19,6 +19,8 @@ from .core.registry import (
     ToolSpec,
 )
 
+# Smithery will be lazy-loaded
+
 # Explicitly define public API
 __all__ = [
     "invoke_tool",
@@ -76,3 +78,15 @@ def run_openai_tool_call(tool_call):
         return run_openai_tool_call_from_registry(tool_call)
     except ImportError:
         raise ImportError("OpenAI adapter requires: pip install openai")
+
+# Lazy-load smithery for simple interface
+def __getattr__(name):
+    """Lazy load smithery when accessed."""
+    if name == "smithery":
+        try:
+            # Import smithery from tools
+            from .tools.smithery import smithery
+            return smithery
+        except ImportError as e:
+            raise ImportError(f"Smithery integration requires: pip install httpx mcp. Error: {e}")
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

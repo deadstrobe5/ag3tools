@@ -45,6 +45,7 @@ ag3tools run web_search --kv query="test"
 - **Search**: `web_search`, `web_search_async`
 - **Docs**: `find_docs`, `rank_docs`, `validate_docs_*`
 - **Net**: `fetch_page`, `fetch_page_async`
+- **Smithery**: Import any MCP server from [smithery.ai](https://smithery.ai)
 
 ## 🔌 Integrations
 
@@ -55,6 +56,11 @@ result = ag3tools.run_openai_tool_call(tool_call)
 
 # LangChain
 tools = ag3tools.get_langchain_tools()
+
+# Smithery MCP Servers
+from ag3tools.tools.smithery import import_smithery_server
+import_smithery_server("@nickclyde/duckduckgo-mcp-server")
+result = ag3tools.invoke_tool("smithery:@nickclyde/duckduckgo-mcp-server:search", query="python")
 ```
 
 ## ➕ Adding Tools
