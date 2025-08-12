@@ -1,10 +1,10 @@
 # 🤖 ag3tools
 
-**Zero-maintenance LLM tool library**
+**LLM Tool Library**
 
 [![Tests](https://img.shields.io/badge/tests-17%2F17%20passing-brightgreen)](#) [![Python](https://img.shields.io/badge/python-3.9%2B-blue)](#)
 
-*Tiny, composable tools for LLM agents with auto-discovery, typed I/O, and cost tracking*
+*Tool hub for LLMs*
 
 ## ✨ Features
 
