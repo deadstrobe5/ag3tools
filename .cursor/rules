@@ -21,7 +21,7 @@ ag3tools/
 │   └── net/
 │       └── fetch_page.py   # HTTP page fetching + types
 │   └── smithery/
-│       └── importer.py     # Import MCP servers from smithery.ai
+│       └── core.py         # Access ANY MCP server from smithery.ai catalog
 ├── adapters/               # Framework integrations
 │   ├── openai_tools.py     # OpenAI function calling
 │   └── langchain_tools.py  # LangChain tool integration
@@ -40,10 +40,10 @@ result = ag3tools.invoke_tool("web_search", query="python", max_results=5)
 docs_url = ag3tools.find_docs_url("fastapi")
 tools = ag3tools.list_tools()
 
-# Smithery MCP servers (set SMITHERY_API_KEY in ~/.bashrc)
-from ag3tools.tools.smithery import import_smithery_server
-import_smithery_server("@nickclyde/duckduckgo-mcp-server")
-result = ag3tools.invoke_tool("ddg:search", query="test")
+# Smithery - Access ANY MCP server from smithery.ai (100+ tools)
+from ag3tools import smithery
+smithery.get("@modelcontextprotocol/youtube")  # Import any server
+result = smithery.call("@modelcontextprotocol/youtube", "search", {"query": "test"})
 ```
 
 ## Adding Tools (Zero Maintenance)
@@ -78,7 +78,7 @@ def my_tool(input: MyInput):
 - Search: `web_search`, `web_search_async`
 - Docs: `find_docs`, `rank_docs`, `validate_docs_*`
 - Net: `fetch_page`, `fetch_page_async`
-- Smithery: Import any MCP server from smithery.ai
+- Smithery: Access ANY MCP server from smithery.ai's 100+ tools catalog
 
 ## CLI
 ```bash

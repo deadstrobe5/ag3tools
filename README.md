@@ -29,6 +29,11 @@ docs_url = ag3tools.find_docs_url("fastapi")
 # Search web
 results = ag3tools.invoke_tool("web_search", query="python", max_results=5)
 
+# Use ANY MCP server from smithery.ai
+from ag3tools import smithery
+smithery.get("@modelcontextprotocol/youtube")  # Import any server
+result = smithery.call("@modelcontextprotocol/youtube", "search", {"query": "python"})
+
 # List tools
 tools = ag3tools.list_tools()
 ```
@@ -45,7 +50,7 @@ ag3tools run web_search --kv query="test"
 - **Search**: `web_search`, `web_search_async`
 - **Docs**: `find_docs`, `rank_docs`, `validate_docs_*`
 - **Net**: `fetch_page`, `fetch_page_async`
-- **Smithery**: Import any MCP server from [smithery.ai](https://smithery.ai)
+- **Smithery**: Import ANY MCP server from [smithery.ai](https://smithery.ai)'s 100+ tools catalog
 
 ## 🔌 Integrations
 
@@ -57,10 +62,21 @@ result = ag3tools.run_openai_tool_call(tool_call)
 # LangChain
 tools = ag3tools.get_langchain_tools()
 
-# Smithery MCP Servers
-from ag3tools.tools.smithery import import_smithery_server
-import_smithery_server("@nickclyde/duckduckgo-mcp-server")
-result = ag3tools.invoke_tool("smithery:@nickclyde/duckduckgo-mcp-server:search", query="python")
+# Smithery - Use ANY MCP server from smithery.ai
+from ag3tools import smithery
+
+# Import and use any server instantly
+smithery.get("@modelcontextprotocol/youtube")
+smithery.get("@modelcontextprotocol/stripe")
+smithery.get("@modelcontextprotocol/github")
+
+# Call their tools
+result = smithery.call("@modelcontextprotocol/youtube", "search", {"query": "python"})
+payment = smithery.call("@modelcontextprotocol/stripe", "create_payment_link", {...})
+
+# Pre-configured shortcuts for popular tools (optional)
+docs = smithery.context7.get_docs("react", "hooks")  # Quick doc lookup
+results = smithery.ddgo.search("AI news")            # Quick search
 ```
 
 ## ➕ Adding Tools
@@ -116,6 +132,7 @@ export AG3TOOLS_CACHE_ENABLED=true
 export AG3TOOLS_CACHE_TTL=900
 export AG3TOOLS_COST_LOG_ENABLED=true
 export OPENAI_API_KEY=sk-...
+export SMITHERY_API_KEY=your-key  # Get at smithery.ai
 ```
 
 ## 🧪 Testing
